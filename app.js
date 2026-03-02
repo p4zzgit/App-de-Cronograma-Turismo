@@ -23,7 +23,8 @@ import {
   Type as TypeIcon,
   Palette,
   Upload,
-  Save
+  Save,
+  LogOut
 } from 'lucide-react';
 import { 
   format, 
@@ -251,7 +252,7 @@ export default function App() {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
   const [hasPermissionError, setHasPermissionError] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(sessionStorage.getItem('isLogged') === 'true');
   const [isSettingsUnlocked, setIsSettingsUnlocked] = useState(false);
 
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -399,6 +400,13 @@ export default function App() {
     }
   };
 
+  const handleLogout = () => {
+    if (confirm('Tem certeza que deseja sair?')) {
+      sessionStorage.removeItem('isLogged');
+      setIsAuthenticated(false);
+    }
+  };
+
   const renderContent = () => {
     if (!db) return html`
       <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
@@ -508,7 +516,10 @@ export default function App() {
   };
 
   if (!isAuthenticated) {
-    return html`<${LoginScreen} settings=${settings} onLogin=${() => setIsAuthenticated(true)} onReset=${handleResetSettings} />`;
+    return html`<${LoginScreen} settings=${settings} onLogin=${() => {
+      sessionStorage.setItem('isLogged', 'true');
+      setIsAuthenticated(true);
+    }} onReset=${handleResetSettings} />`;
   }
 
   return html`
@@ -527,10 +538,11 @@ export default function App() {
             </div>
             <div className="flex items-center gap-3">
               <button 
-                onClick=${() => setActiveTab('configuracoes')}
-                className="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors"
+                onClick=${handleLogout}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-red-500 hover:bg-red-50 rounded-xl transition-colors font-bold text-xs"
               >
-                <${Settings} size=${20} />
+                <${LogOut} size=${16} />
+                Deslogar
               </button>
             </div>
           </div>
