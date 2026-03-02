@@ -335,7 +335,9 @@ export default function App() {
 
   const handleDeleteActivity = async (id) => {
     if (!db) return;
-    await deleteDoc(doc(db, 'activities', id));
+    if (confirm('Tem certeza que deseja excluir este item?')) {
+      await deleteDoc(doc(db, 'activities', id));
+    }
   };
 
   const handleReorderActivities = async (newActivities) => {
@@ -356,7 +358,9 @@ export default function App() {
 
   const handleDeleteTask = async (id) => {
     if (!db) return;
-    await deleteDoc(doc(db, 'tasks', id));
+    if (confirm('Tem certeza que deseja excluir este item?')) {
+      await deleteDoc(doc(db, 'tasks', id));
+    }
   };
 
   const handleAddCampaign = async (campaign) => {
@@ -373,7 +377,9 @@ export default function App() {
 
   const handleDeleteCampaign = async (id) => {
     if (!db) return;
-    await deleteDoc(doc(db, 'campaigns', id));
+    if (confirm('Tem certeza que deseja excluir este item?')) {
+      await deleteDoc(doc(db, 'campaigns', id));
+    }
   };
 
   const handleUpdateSettings = async (newSettings) => {
@@ -1357,7 +1363,7 @@ function ConfiguracoesView({ settings, onUpdate }) {
                   <div className="relative w-20 h-20 bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden group">
                     <img src=${localSettings.logoUrl} alt="Preview" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
                     <button 
-                      onClick=${() => updateSetting('logoUrl', '')}
+                      onClick=${() => { if(confirm('Tem certeza que deseja excluir este item?')) updateSetting('logoUrl', ''); }}
                       className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
                     >
                       <${Trash2} size=${16} />
