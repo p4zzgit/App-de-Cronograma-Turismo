@@ -98,6 +98,13 @@ function LoginScreen({ settings, onLogin, onReset }) {
   const [error, setError] = useState('');
   const [attempts, setAttempts] = useState(0);
 
+  React.useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
   const handleLogin = (e) => {
     e.preventDefault();
     if (user.trim() === settings.loginUser && pass.trim() === settings.loginPassword) {
@@ -109,7 +116,7 @@ function LoginScreen({ settings, onLogin, onReset }) {
   };
 
   return html`
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 font-sans">
+    <div className="h-screen w-full bg-slate-50 flex flex-col items-center justify-center p-6 font-sans overflow-hidden">
       <${motion.div} 
         initial=${{ opacity: 0, y: 20 }}
         animate=${{ opacity: 1, y: 0 }}
@@ -393,8 +400,6 @@ export default function App() {
   };
 
   const renderContent = () => {
-    if (!isAuthenticated) return html`<${LoginScreen} settings=${settings} onLogin=${() => setIsAuthenticated(true)} onReset=${handleResetSettings} />`;
-
     if (!db) return html`
       <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
         <div className="p-4 bg-red-50 rounded-full text-red-600 mb-6">
@@ -502,70 +507,74 @@ export default function App() {
     }
   };
 
+  if (!isAuthenticated) {
+    return html`<${LoginScreen} settings=${settings} onLogin=${() => setIsAuthenticated(true)} onReset=${handleResetSettings} />`;
+  }
+
   return html`
     <div className="min-h-screen bg-slate-50 pb-24 font-sans text-slate-900">
       <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-3">
-        <div className="flex items-center justify-between max-w-md mx-auto">
-          <div className="flex items-center gap-2">
-            ${settings.logoUrl ? html`
-              <img src=${settings.logoUrl} alt="Logo" className="w-8 h-8 object-contain rounded-lg" referrerPolicy="no-referrer" />
-            ` : html`
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-200" style=${{ backgroundColor: settings.primaryColor }}>
-                <${LayoutDashboard} size=${18} />
-              </div>
+          <div className="flex items-center justify-between max-w-md mx-auto">
+            <div className="flex items-center gap-2">
+              ${settings.logoUrl ? html`
+                <img src=${settings.logoUrl} alt="Logo" className="w-8 h-8 object-contain rounded-lg" referrerPolicy="no-referrer" />
+              ` : html`
+                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-200" style=${{ backgroundColor: settings.primaryColor }}>
+                  <${LayoutDashboard} size=${18} />
+                </div>
+              `}
+              <h1 className="font-bold text-lg tracking-tight text-slate-800">${settings.appTitle}</h1>
+            </div>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick=${() => setActiveTab('configuracoes')}
+                className="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors"
+              >
+                <${Settings} size=${20} />
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <div className="px-4 py-3 max-w-md mx-auto">
+          <${AnimatePresence} mode="wait">
+            ${(todayActivities.length > 0 || lateTasks.length > 0) && html`
+              <${motion.div} 
+                initial=${{ opacity: 0, y: -10 }}
+                animate=${{ opacity: 1, y: 0 }}
+                exit=${{ opacity: 0, y: -10 }}
+                className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4 shadow-sm"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-amber-100 rounded-xl text-amber-600">
+                    <${Clock} size=${18} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-amber-900">Resumo de Hoje</p>
+                    <p className="text-xs text-amber-700 mt-0.5">
+                      ${todayActivities.length} atividades programadas. 
+                      ${lateTasks.length > 0 && ` ${lateTasks.length} tarefas atrasadas.`}
+                    </p>
+                  </div>
+                </div>
+              </${motion.div}>
             `}
-            <h1 className="font-bold text-lg tracking-tight text-slate-800">${settings.appTitle}</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <button 
-              onClick=${() => setActiveTab('configuracoes')}
-              className="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors"
-            >
-              <${Settings} size=${20} />
-            </button>
-          </div>
+          </${AnimatePresence}>
         </div>
-      </header>
 
-      <div className="px-4 py-3 max-w-md mx-auto">
-        <${AnimatePresence} mode="wait">
-          ${(todayActivities.length > 0 || lateTasks.length > 0) && html`
-            <${motion.div} 
-              initial=${{ opacity: 0, y: -10 }}
-              animate=${{ opacity: 1, y: 0 }}
-              exit=${{ opacity: 0, y: -10 }}
-              className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4 shadow-sm"
-            >
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-amber-100 rounded-xl text-amber-600">
-                  <${Clock} size=${18} />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-amber-900">Resumo de Hoje</p>
-                  <p className="text-xs text-amber-700 mt-0.5">
-                    ${todayActivities.length} atividades programadas. 
-                    ${lateTasks.length > 0 && ` ${lateTasks.length} tarefas atrasadas.`}
-                  </p>
-                </div>
-              </div>
-            </${motion.div}>
-          `}
-        </${AnimatePresence}>
-      </div>
+        <main className="max-w-md mx-auto px-4">
+          ${renderContent()}
+        </main>
 
-      <main className="max-w-md mx-auto px-4">
-        ${renderContent()}
-      </main>
-
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-3 pb-6 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-        <div className="flex items-center justify-between max-w-md mx-auto">
-          <${NavButton} active=${activeTab === 'dashboard'} onClick=${() => setActiveTab('dashboard')} icon=${html`<${LayoutDashboard} size=${20} />`} label=${settings.tabLabels.dashboard} />
-          <${NavButton} active=${activeTab === 'cronograma'} onClick=${() => setActiveTab('cronograma')} icon=${html`<${Calendar} size=${20} />`} label=${settings.tabLabels.cronograma} />
-          <${NavButton} active=${activeTab === 'tarefas'} onClick=${() => setActiveTab('tarefas')} icon=${html`<${ListTodo} size=${20} />`} label=${settings.tabLabels.tarefas} />
-          <${NavButton} active=${activeTab === 'campanhas'} onClick=${() => setActiveTab('campanhas')} icon=${html`<${Megaphone} size=${20} />`} label=${settings.tabLabels.campanhas} />
-          <${NavButton} active=${activeTab === 'configuracoes'} onClick=${() => setActiveTab('configuracoes')} icon=${html`<${Settings} size=${20} />`} label=${settings.tabLabels.configuracoes} />
-        </div>
-      </nav>
+        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-3 pb-6 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+          <div className="flex items-center justify-between max-w-md mx-auto">
+            <${NavButton} active=${activeTab === 'dashboard'} onClick=${() => setActiveTab('dashboard')} icon=${html`<${LayoutDashboard} size=${20} />`} label=${settings.tabLabels.dashboard} />
+            <${NavButton} active=${activeTab === 'cronograma'} onClick=${() => setActiveTab('cronograma')} icon=${html`<${Calendar} size=${20} />`} label=${settings.tabLabels.cronograma} />
+            <${NavButton} active=${activeTab === 'tarefas'} onClick=${() => setActiveTab('tarefas')} icon=${html`<${ListTodo} size=${20} />`} label=${settings.tabLabels.tarefas} />
+            <${NavButton} active=${activeTab === 'campanhas'} onClick=${() => setActiveTab('campanhas')} icon=${html`<${Megaphone} size=${20} />`} label=${settings.tabLabels.campanhas} />
+            <${NavButton} active=${activeTab === 'configuracoes'} onClick=${() => setActiveTab('configuracoes')} icon=${html`<${Settings} size=${20} />`} label=${settings.tabLabels.configuracoes} />
+          </div>
+        </nav>
     </div>
   `;
 }
