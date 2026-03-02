@@ -1316,6 +1316,11 @@ function ConfiguracoesView({ settings, onUpdate }) {
   const handleLogoUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        alert('O arquivo é muito grande. O limite máximo é de 5MB.');
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
         updateSetting('logoUrl', reader.result);
