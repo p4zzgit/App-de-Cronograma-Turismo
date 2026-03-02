@@ -401,7 +401,7 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    if (confirm('Tem certeza que deseja sair?')) {
+    if (confirm('Tem certeza que deseja deslogar?')) {
       sessionStorage.removeItem('isLogged');
       setIsAuthenticated(false);
     }
