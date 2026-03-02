@@ -92,17 +92,19 @@ const DEFAULT_SETTINGS = {
 
 // --- Components ---
 
-function LoginScreen({ settings, onLogin }) {
+function LoginScreen({ settings, onLogin, onReset }) {
   const [user, setUser] = useState('');
   const [pass, setPass] = useState('');
   const [error, setError] = useState('');
+  const [attempts, setAttempts] = useState(0);
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (user === settings.loginUser && pass === settings.loginPassword) {
+    if (user.trim() === settings.loginUser && pass.trim() === settings.loginPassword) {
       onLogin();
     } else {
       setError('Usuário ou senha incorretos');
+      setAttempts(prev => prev + 1);
     }
   };
 
@@ -148,7 +150,20 @@ function LoginScreen({ settings, onLogin }) {
             />
           </div>
 
-          ${error && html`<p className="text-red-500 text-xs font-bold text-center mt-2">${error}</p>`}
+          ${error && html`
+            <div className="space-y-2 text-center">
+              <p className="text-red-500 text-xs font-bold mt-2">${error}</p>
+              ${attempts >= 2 && html`
+                <button 
+                  type="button"
+                  onClick=${onReset}
+                  className="text-[10px] text-blue-600 font-bold uppercase tracking-wider hover:underline"
+                >
+                  Esqueceu a senha? Resetar para admin/admin
+                </button>
+              `}
+            </div>
+          `}
 
           <button 
             type="submit"
@@ -282,7 +297,8 @@ export default function App() {
 
     const unsubSettings = onSnapshot(doc(db, 'settings', 'app'), (snapshot) => {
       if (snapshot.exists()) {
-        setSettings(snapshot.data());
+        const data = snapshot.data();
+        setSettings(prev => ({ ...prev, ...data }));
       }
     }, (error) => {
       console.error("Error fetching settings:", error);
@@ -361,8 +377,23 @@ export default function App() {
   const tomorrowActivities = activities.filter(a => isTomorrow(parseISO(a.date)));
   const lateTasks = tasks.filter(t => t.status !== 'concluida' && new Date(t.dueDate) < new Date() && !isToday(parseISO(t.dueDate)));
 
+  const handleResetSettings = async () => {
+    if (!db) return;
+    if (confirm('Deseja resetar as credenciais para admin/admin?')) {
+      const newSettings = { 
+        ...settings, 
+        loginUser: 'admin', 
+        loginPassword: 'admin',
+        settingsPassword: 'admin'
+      };
+      await setDoc(doc(db, 'settings', 'app'), newSettings);
+      setSettings(newSettings);
+      alert('Credenciais resetadas com sucesso!');
+    }
+  };
+
   const renderContent = () => {
-    if (!isAuthenticated) return html`<${LoginScreen} settings=${settings} onLogin=${() => setIsAuthenticated(true)} />`;
+    if (!isAuthenticated) return html`<${LoginScreen} settings=${settings} onLogin=${() => setIsAuthenticated(true)} onReset=${handleResetSettings} />`;
 
     if (!db) return html`
       <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
