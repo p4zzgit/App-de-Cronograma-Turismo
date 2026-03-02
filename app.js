@@ -78,6 +78,7 @@ function cn(...inputs) {
 const DEFAULT_SETTINGS = {
   appTitle: 'Coordenação Mídia',
   logoUrl: '',
+  logoSize: 100,
   tabLabels: {
     dashboard: 'Início',
     cronograma: 'Agenda',
@@ -125,7 +126,17 @@ function LoginScreen({ settings, onLogin, onReset }) {
       >
         <div className="flex flex-col items-center mb-10">
           ${settings.logoUrl ? html`
-            <img src=${settings.logoUrl} alt="Logo" className="w-24 h-24 object-contain mb-6" referrerPolicy="no-referrer" />
+            <img 
+              src=${settings.logoUrl} 
+              alt="Logo" 
+              className="object-contain mb-6" 
+              style=${{ 
+                width: (settings.logoSize || 100) + 'px',
+                background: 'transparent',
+                mixBlendMode: 'normal'
+              }}
+              referrerPolicy="no-referrer" 
+            />
           ` : html`
             <div className="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center text-white shadow-2xl shadow-blue-200 mb-6" style=${{ backgroundColor: settings.primaryColor }}>
               <${LayoutDashboard} size=${40} />
@@ -534,7 +545,16 @@ export default function App() {
           <div className="flex items-center justify-between max-w-md mx-auto">
             <div className="flex items-center gap-2">
               ${settings.logoUrl ? html`
-                <img src=${settings.logoUrl} alt="Logo" className="w-8 h-8 object-contain rounded-lg" referrerPolicy="no-referrer" />
+                <img 
+                  src=${settings.logoUrl} 
+                  alt="Logo" 
+                  className="w-8 h-8 object-contain rounded-lg" 
+                  style=${{ 
+                    background: 'transparent',
+                    mixBlendMode: 'normal'
+                  }}
+                  referrerPolicy="no-referrer" 
+                />
               ` : html`
                 <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-200" style=${{ backgroundColor: settings.primaryColor }}>
                   <${LayoutDashboard} size=${18} />
@@ -1345,14 +1365,23 @@ function ConfiguracoesView({ settings, onUpdate }) {
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext('2d');
+          
+          // Limpa o canvas para garantir transparência
+          ctx.clearRect(0, 0, width, height);
           ctx.drawImage(img, 0, 0, width, height);
 
-          // Comprime para JPEG com qualidade 0.7 (reduz drasticamente o tamanho em bytes)
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          // Usa PNG para manter transparência (ou WebP se preferir, mas PNG é mais garantido para o pedido)
+          // Se for muito grande, tentamos WebP que é menor e mantém transparência
+          let compressedDataUrl = canvas.toDataURL('image/png');
+          
+          // Se PNG for muito grande (> 1MB), tenta WebP com compressão
+          if (compressedDataUrl.length > 1040000) {
+            compressedDataUrl = canvas.toDataURL('image/webp', 0.8);
+          }
           
           // Verifica se o resultado final em Base64 cabe no Firestore (~1MB)
           if (compressedDataUrl.length > 1040000) {
-            alert('A imagem ainda é muito complexa para o banco de dados. Tente uma imagem com menos detalhes ou menor resolução.');
+            alert('A imagem ainda é muito pesada para o banco de dados, mesmo comprimida. Tente uma imagem com menos detalhes ou menor resolução.');
             return;
           }
 
@@ -1421,6 +1450,22 @@ function ConfiguracoesView({ settings, onUpdate }) {
                   onChange=${(e) => updateSetting('logoUrl', e.target.value)} 
                   placeholder="https://exemplo.com/logo.png"
                 />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tamanho da Logo (Login)</label>
+              <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                <input 
+                  type="range" 
+                  min="50" 
+                  max="300" 
+                  step="1"
+                  value=${localSettings.logoSize || 100} 
+                  onChange=${(e) => updateSetting('logoSize', parseInt(e.target.value))}
+                  className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                />
+                <span className="text-xs font-bold text-slate-600 w-12 text-right">${localSettings.logoSize || 100}px</span>
               </div>
             </div>
 
