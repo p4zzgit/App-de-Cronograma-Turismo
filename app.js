@@ -1316,14 +1316,49 @@ function ConfiguracoesView({ settings, onUpdate }) {
   const handleLogoUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      const maxSize = 5 * 1024 * 1024; // 5MB
+      const maxSize = 5 * 1024 * 1024; // 5MB (limite de entrada)
       if (file.size > maxSize) {
         alert('O arquivo é muito grande. O limite máximo é de 5MB.');
         return;
       }
+
       const reader = new FileReader();
-      reader.onloadend = () => {
-        updateSetting('logoUrl', reader.result);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // Redimensiona se for maior que 1200px para economizar espaço
+          const MAX_DIM = 1200;
+          if (width > MAX_DIM || height > MAX_DIM) {
+            if (width > height) {
+              height *= MAX_DIM / width;
+              width = MAX_DIM;
+            } else {
+              width *= MAX_DIM / height;
+              height = MAX_DIM;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Comprime para JPEG com qualidade 0.7 (reduz drasticamente o tamanho em bytes)
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          
+          // Verifica se o resultado final em Base64 cabe no Firestore (~1MB)
+          if (compressedDataUrl.length > 1040000) {
+            alert('A imagem ainda é muito complexa para o banco de dados. Tente uma imagem com menos detalhes ou menor resolução.');
+            return;
+          }
+
+          updateSetting('logoUrl', compressedDataUrl);
+        };
+        img.src = event.target.result;
       };
       reader.readAsDataURL(file);
     }
